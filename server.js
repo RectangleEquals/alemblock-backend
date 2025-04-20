@@ -1,77 +1,113 @@
 const express = require('express');
 const axios = require('axios');
-const dotenv = require('dotenv');
+require('dotenv').config();
+const db = require('./utils/db');
 const { generateToken, authenticateToken } = require('./utils/jwt');
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.get('/auth', authenticateToken, (req, res) => {
-	res.json({ message: `Hello ${req.user.userId}, you have been authorized!` });
-});
+db.connect(
+    conn => {
+        run(conn);
+    },
+    error => {
+        console.log(error);
+    }
+);
 
-app.get('/login', (req, res) => {
-  const params = new URLSearchParams({
-    client_id: process.env.DISCORD_CLIENT_ID,
-    redirect_uri: process.env.DISCORD_REDIRECT_URI,
-    response_type: 'code',
-    scope: 'identify guilds guilds.members.read',
-  });
-  res.redirect(`https://discord.com/api/oauth2/authorize?${params.toString()}`);
-});
-
-app.get('/', async (req, res) => {
-  const code = req.query.code;
-  if (!code) return res.redirect('/login');
-
-  try {
-    // Exchange code for access token
-    const tokenResponse = await axios.post(
-      'https://discord.com/api/oauth2/token',
-      new URLSearchParams({
-        client_id: process.env.DISCORD_CLIENT_ID,
-        client_secret: process.env.DISCORD_CLIENT_SECRET,
-        grant_type: 'authorization_code',
-        code,
-        redirect_uri: process.env.DISCORD_REDIRECT_URI,
-      }),
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-    );
-
-    const accessToken = tokenResponse.data.access_token;
-
-    // Fetch user info
-    const userResponse = await axios.get('https://discord.com/api/users/@me', {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-
-    const userId = userResponse.data.id;
-
-    // Fetch guild member info
-    const memberResponse = await axios.get(
-      `https://discord.com/api/users/@me/guilds/${process.env.DISCORD_GUILD_ID}/member`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-
-    const roles = memberResponse.data.roles;
-
-    if (!roles.includes(process.env.DISCORD_ROLE_ID)) {
-      return res.status(403).send('Access denied: Missing required role');
+async function run(conn) {
+    if (!conn) {
+        console.error('FATAL: Failed to connect to database!');
+        return;
     }
 
-    // Generate JWT
-    const token = generateToken({ userId });
+    console.log('Successfully connected to database!');
 
-    // Send token to client (e.g., via redirect or JSON response)
-    res.json({ token });
-  } catch (error) {
-    console.error('Authentication error:', error.response?.data || error.message);
-    res.status(500).send('Authentication failed');
-  }
-});
+    app.get('/auth', authenticateToken(db), (req, res) => {
+        res.json({
+            message: `Hello ${req.user.userId}, you have been authorized!`,
+        });
+    });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+    app.get('/login', (req, res) => {
+        const params = new URLSearchParams({
+            client_id: process.env.DISCORD_CLIENT_ID,
+            redirect_uri: process.env.DISCORD_REDIRECT_URI,
+            response_type: 'code',
+            scope: 'identify guilds guilds.members.read',
+        });
+        res.redirect(
+            `https://discord.com/api/oauth2/authorize?${params.toString()}`
+        );
+    });
+
+    app.get('/', async (req, res) => {
+        const code = req.query.code;
+        if (!code) return res.redirect('/login');
+
+        try {
+            // Exchange code for access token
+            const tokenResponse = await axios.post(
+                'https://discord.com/api/oauth2/token',
+                new URLSearchParams({
+                    client_id: process.env.DISCORD_CLIENT_ID,
+                    client_secret: process.env.DISCORD_CLIENT_SECRET,
+                    grant_type: 'authorization_code',
+                    code,
+                    redirect_uri: process.env.DISCORD_REDIRECT_URI,
+                }),
+                {
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                }
+            );
+
+            const accessToken = tokenResponse.data.access_token;
+
+            // Fetch user info
+            const userResponse = await axios.get(
+                'https://discord.com/api/users/@me',
+                {
+                    headers: { Authorization: `Bearer ${accessToken}` },
+                }
+            );
+
+            const userId = userResponse.data.id;
+            const userName = userResponse.data.username;
+
+            // Fetch guild member info
+            const memberResponse = await axios.get(
+                `https://discord.com/api/users/@me/guilds/${process.env.DISCORD_GUILD_ID}/member`,
+                { headers: { Authorization: `Bearer ${accessToken}` } }
+            );
+
+            const roles = memberResponse.data.roles;
+
+            if (!roles.includes(process.env.DISCORD_ROLE_ID)) {
+                return res
+                    .status(403)
+                    .send('Access denied: Missing required role');
+            }
+
+            // Generate JWT
+            const refreshToken = generateToken({ userId });
+            const expiresAt = new Date(now + 3600000); // 1 hour = 60 * 60 * 1000 (60 seconds * 60 minutes * 1000 milliseconds)
+            let user = await db.findOrCreateUser(userId, userName, accessToken, refreshToken, expiresAt);
+
+            // Send token to client (e.g., via redirect or JSON response)
+            res.json(user);
+        } catch (error) {
+            console.error(
+                'Authentication error:',
+                error.response?.data || error.message
+            );
+            res.status(500).send('Authentication failed');
+        }
+    });
+
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}

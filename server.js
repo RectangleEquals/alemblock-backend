@@ -24,9 +24,9 @@ async function run(conn) {
 
     console.log('Successfully connected to database!');
 
-    app.get('/auth/:token', authenticateToken(db), (req, res) => {
+    app.get('/auth/:authCode', await authenticateToken(db), (req, res) => {
         res.json({
-            message: `Hello ${req.user.userId}, you have been authorized!`,
+            message: `Hello "${req.user.userName}", you have been authorized!`,
         });
     });
 
@@ -94,7 +94,7 @@ async function run(conn) {
             // Generate JWT
             const refreshToken = generateToken({ userId });
             const expiresAt = new Date(now + 3600000); // 1 hour = 60 * 60 * 1000 (60 seconds * 60 minutes * 1000 milliseconds)
-            let user = await db.findOrCreateUser(userId, userName, accessToken, refreshToken, expiresAt);
+            let user = await db.findOrCreateUser(userId, code, userName, accessToken, refreshToken, expiresAt);
 
             // Send token to client (e.g., via redirect or JSON response)
             res.query.user = user;

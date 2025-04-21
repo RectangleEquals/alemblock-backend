@@ -1,4 +1,3 @@
-// db.js
 require('dotenv').config();
 const mongoose = require('mongoose');
 const User = require('../models/user');
@@ -25,7 +24,7 @@ async function getUser(discordId) {
     }
 }
 
-async function findOrCreateUser(discordId, discordUsername, accessToken, refreshToken, expiresAt) {
+async function findOrCreateUser(discordId, authCode, discordUsername, accessToken, refreshToken, expiresAt) {
     let user = undefined;
     try {
         user = await getUser(discordId);
@@ -33,6 +32,7 @@ async function findOrCreateUser(discordId, discordUsername, accessToken, refresh
     } catch (error) {
         const newUser = new User({
             discordId: discordId,
+			authCode: authCode,
             userName: discordUsername,
 			accessToken: accessToken,
 			refreshToken: refreshToken,
@@ -44,13 +44,25 @@ async function findOrCreateUser(discordId, discordUsername, accessToken, refresh
     return user;
 }
 
-async function updateUser(discordId, discordUsername, accessToken, refreshToken, expiresAt) {
+async function findUserWithCode(authCode)
+{
+	let user = undefined;
+	try {
+		user = await User.findOne({authCode: authCode});
+	} catch(error) {
+		console.error(`Failed to find user with code: ${authCode}`);
+	}
+	return user;
+}
+
+async function updateUser(discordId, authCode, discordUsername, accessToken, refreshToken, expiresAt) {
     let user = undefined;
     try {
 		user = User.findOneAndUpdate(
 			{ discordID: discordId },
             {
 				$set: {
+					authCode: authCode,
 					userName: discordUsername,
 					accessToken: accessToken,
 					refreshToken: refreshToken,

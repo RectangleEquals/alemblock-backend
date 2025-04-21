@@ -4,20 +4,23 @@ function generateToken(payload) {
     return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 }
 
-function authenticateToken(db) {
-    return function (req, res, next) {
+async function authenticateToken(db) {
+    return async function (req, res, next)
+    {
         if(!db)
-            return res.json({error: "Invalid connection"});
+            return res.json({error: "Invalid Connection"});
 
-        return res.json({headers: req.headers, params: req.params});
+        if(!req.params || !req.params.authCode)
+            return res.json({error: "Bad Request"});
+
+        const authCode = req.params.authCode;
+        const user = await db.findUserWithCode(authCode);
+        if(!user)
+            return res.json({error: "Bad User"});
+        
+        req.user = user;
+        //return res.json({userName: user.userName, refreshToken: user.refreshToken});
         /*
-        const authHeader = req.headers['Authorization'];
-        const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
-        console.log(`Handling authorization for token: ${token}`);
-
-        if (!token)
-            return res.json({error: "Bad Authorization"});
-
         jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
             console.log('Verifying token...');
             if (err) {

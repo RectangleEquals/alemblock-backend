@@ -9,7 +9,7 @@ function authenticateToken(db) {
         if(!db)
             return res.json({error: "Invalid connection"});
 
-        return res.json({headers: req.headers});
+        return res.json({headers: req.headers, params: req.params});
         /*
         const authHeader = req.headers['Authorization'];
         const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>

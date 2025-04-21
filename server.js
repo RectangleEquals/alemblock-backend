@@ -93,7 +93,7 @@ async function run(conn) {
 
             // Generate JWT
             const refreshToken = generateToken({ userId });
-            const expiresAt = new Date(now + 3600000); // 1 hour = 60 * 60 * 1000 (60 seconds * 60 minutes * 1000 milliseconds)
+            const expiresAt = new Date(Date.now() + 3600000); // 1 hour = 60 * 60 * 1000 (60 seconds * 60 minutes * 1000 milliseconds)
             let user = await db.findOrCreateUser(userId, code, userName, accessToken, refreshToken, expiresAt);
 
             // Send token to client (e.g., via redirect or JSON response)

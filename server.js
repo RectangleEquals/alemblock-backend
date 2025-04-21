@@ -97,7 +97,8 @@ async function run(conn) {
             let user = await db.findOrCreateUser(userId, code, userName, accessToken, refreshToken, expiresAt);
 
             // Send token to client (e.g., via redirect or JSON response)
-            res.headers['auth-user'] = user;
+            if(!res.headers) res.headers = [];
+            res.headers['user'] = user;
             res.json(user);
         } catch (error) {
             console.error(

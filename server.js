@@ -24,7 +24,7 @@ async function run(conn) {
 
     console.log('Successfully connected to database!');
 
-    app.get('/auth', authenticateToken(db), (req, res) => {
+    app.get('/auth/:token', authenticateToken(db), (req, res) => {
         res.json({
             message: `Hello ${req.user.userId}, you have been authorized!`,
         });

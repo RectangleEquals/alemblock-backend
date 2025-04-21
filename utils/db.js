@@ -85,5 +85,6 @@ async function updateUser(discordId, authCode, discordUsername, accessToken, ref
 module.exports = {
     connect,
     findOrCreateUser,
+	findUserWithCode,
     updateUser,
 };

@@ -17,7 +17,7 @@ function authenticateToken(db, onSuccess, onError) {
         if (!user)
             return onError(res, 'Unknown User');
 
-        await jwt.verify(user.refreshToken, process.env.JWT_SECRET, (err, user) => {
+        await jwt.verify(user.refreshToken, process.env.JWT_SECRET, (err) => {
             console.log('Verifying user...');
             if (err)
                 return onError(res, `Invalid Token! (${err})`);
@@ -29,7 +29,7 @@ function authenticateToken(db, onSuccess, onError) {
                 avatarUrl: user.avatarUrl,
                 refreshToken: user.refreshToken,
             };
-            return onSuccess(res, req.user);
+            return onSuccess(req, user);
         });
     };
 }

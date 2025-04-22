@@ -19,6 +19,7 @@ async function authenticateToken(db) {
             return res.json({error: "Bad User"});
         
         req.user = user;
+        next(req, res);
         //return res.json({userName: user.userName, refreshToken: user.refreshToken});
         /*
         jwt.verify(token, process.env.JWT_SECRET, (err, user) => {

@@ -24,7 +24,7 @@ async function getUser(discordId) {
     }
 }
 
-async function findOrCreateUser(discordId, authCode, discordUsername, accessToken, refreshToken, expiresAt) {
+async function findOrCreateUser(discordId, authCode, discordUsername, avatarUrl, accessToken, refreshToken, expiresAt) {
     let user = undefined;
     try {
         user = await getUser(discordId);
@@ -34,6 +34,7 @@ async function findOrCreateUser(discordId, authCode, discordUsername, accessToke
             discordId: discordId,
 			authCode: authCode,
             userName: discordUsername,
+			avatarUrl: avatarUrl,
 			accessToken: accessToken,
 			refreshToken: refreshToken,
 			expiresAt: expiresAt,
@@ -55,7 +56,7 @@ async function findUserWithCode(authCode)
 	return user;
 }
 
-async function updateUser(discordId, authCode, discordUsername, accessToken, refreshToken, expiresAt) {
+async function updateUser(discordId, authCode, discordUsername, avatarUrl, accessToken, refreshToken, expiresAt) {
     let user = undefined;
     try {
 		user = User.findOneAndUpdate(
@@ -64,6 +65,7 @@ async function updateUser(discordId, authCode, discordUsername, accessToken, ref
 				$set: {
 					authCode: authCode,
 					userName: discordUsername,
+					avatarUrl: avatarUrl,
 					accessToken: accessToken,
 					refreshToken: refreshToken,
 					expiresAt: expiresAt,

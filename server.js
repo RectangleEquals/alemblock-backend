@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 require('dotenv').config();
+const path = require('path');
 const db = require('./utils/db');
 const { generateToken, authenticateToken } = require('./utils/jwt');
 
@@ -18,7 +19,7 @@ db.connect(
 
 function onAuthError(res, error) {
     console.error(error);
-    return res.json({error: error});
+    return res.json({ error: error });
 }
 
 function onAuthSuccess(res, user) {
@@ -26,8 +27,7 @@ function onAuthSuccess(res, user) {
     return res.json(user);
 }
 
-async function run(conn)
-{
+async function run(conn) {
     if (!conn) {
         console.error('FATAL: Failed to connect to database!');
         return;
@@ -35,7 +35,10 @@ async function run(conn)
 
     console.log('Successfully connected to database!');
 
-    app.get('/auth/:authCode', authenticateToken(db, onAuthSuccess, onAuthError));
+    app.get(
+        '/auth/:authCode',
+        authenticateToken(db, onAuthSuccess, onAuthError)
+    );
 
     app.get('/login', (req, res) => {
         const params = new URLSearchParams({
@@ -85,11 +88,12 @@ async function run(conn)
             const userName = userResponse.data.username;
             const avatarHash = userResponse.data.avatar;
             const avatarSize = process.env.DISCORD_AVATAR_SIZE || 512;
-            const extension  = avatarHash && avatarHash.startsWith('a_') ? 'gif' : 'png';
-            const avatarUrl  = avatarHash
+            const extension =
+                avatarHash && avatarHash.startsWith('a_') ? 'gif' : 'png';
+            const avatarUrl = avatarHash
                 ? `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.${extension}?size=${avatarSize}`
                 : null;
-            
+
             // Fetch guild member info
             const memberResponse = await axios.get(
                 `https://discord.com/api/users/@me/guilds/${process.env.DISCORD_GUILD_ID}/member`,
@@ -107,12 +111,18 @@ async function run(conn)
             // Generate JWT
             const refreshToken = generateToken({ userId });
             const expiresAt = new Date(Date.now() + 3600000); // 1 hour = 60 * 60 * 1000 (60 seconds * 60 minutes * 1000 milliseconds)
-            let user = await db.findOrCreateUser(userId, code, userName, avatarUrl, accessToken, refreshToken, expiresAt);
+            let user = await db.findOrCreateUser(
+                userId,
+                code,
+                userName,
+                avatarUrl,
+                accessToken,
+                refreshToken,
+                expiresAt
+            );
 
-            // Send token to client (e.g., via redirect or JSON response)
-            // if(!res.headers) res.headers = [];
-            // res.headers['user'] = user;
-            res.json({discordId: user.discordId, userName: user.userName, avatarUrl: user.avatarUrl, refreshToken: user.refreshToken});
+            //res.json({discordId: user.discordId, userName: user.userName, avatarUrl: user.avatarUrl, refreshToken: user.refreshToken});
+            res.redirect(`/login/${code}`);
         } catch (error) {
             console.error(
                 'Authentication error:',
@@ -120,6 +130,12 @@ async function run(conn)
             );
             res.status(500).send('Authentication failed');
         }
+    });
+
+    app.use(express.static(path.join(__dirname, 'public')));
+    app.get('/login/:authCode', (req, res) => {
+        const filePath = path.join(__dirname, 'public', 'auth', 'index.html');
+        res.sendFile(filePath);
     });
 
     app.listen(PORT, () => {

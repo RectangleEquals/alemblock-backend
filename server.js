@@ -16,6 +16,16 @@ db.connect(
     }
 );
 
+function onAuthError(error) {
+    console.error(error);
+    return res.json({error: error});
+}
+
+function onAuthSuccess(user) {
+    console.log(JSON.stringify(user));
+    return res.json(user);
+}
+
 async function run(conn)
 {
     if (!conn) {
@@ -25,15 +35,7 @@ async function run(conn)
 
     console.log('Successfully connected to database!');
 
-    app.get('/auth/:authCode', authenticateToken(db), (req, res) => {
-        if(!req.user)
-            return res.json({error: "Unspecified User"});
-
-        if(!req.user.userName)
-            return res.json({error: "Unknown User"});
-
-        return res.json(req.user);
-    });
+    app.get('/auth/:authCode', authenticateToken(db, onAuthSuccess, onAuthError));
 
     app.get('/login', (req, res) => {
         const params = new URLSearchParams({

@@ -4,25 +4,24 @@ function generateToken(payload) {
     return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 }
 
-function authenticateToken(db) {
-    return async function (req, res, next) {
+function authenticateToken(db, onSuccess, onError) {
+    return async function (req, res) {
         if (!db)
-            return res.json({ error: 'Invalid Connection' });
+            return onError('Invalid Connection');
 
         if (!req.params || !req.params.authCode)
-            return res.json({ error: 'Bad Request' });
+            return onError('Bad Request');
 
         const authCode = req.params.authCode;
         const user = await db.findUserWithCode(authCode);
         if (!user)
-            return res.json({ error: 'Unknown User' });
+            return onError('Unknown User');
 
         await jwt.verify(user.refreshToken, process.env.JWT_SECRET, (err, user) => {
-            console.log('Verifying token...');
-            if (err) {
-                console.error('Invalid Token!');
-                return res.json({ error: 'Invalid Token' });
-            }
+            console.log('Verifying user...');
+            if (err)
+                return onError(`Invalid Token! (${err})`);
+            
             console.log('Authorized!');
             req.user = {
                 discordId: user.discordId,
@@ -30,7 +29,7 @@ function authenticateToken(db) {
                 avatarUrl: user.avatarUrl,
                 refreshToken: user.refreshToken,
             };
-            next();
+            return onSuccess(req.user);
         });
     };
 }

@@ -29,7 +29,7 @@ function authenticateToken(db, onSuccess, onError) {
                 avatarUrl: user.avatarUrl,
                 refreshToken: user.refreshToken,
             };
-            return onSuccess(req, user);
+            return onSuccess(res, user);
         });
     };
 }

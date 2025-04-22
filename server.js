@@ -32,9 +32,7 @@ async function run(conn)
         if(!req.user.userName)
             return res.json({error: "Unknown User"});
 
-        return res.json({
-            message: `Hello "${req.user.userName}", you have been authorized!`
-        });
+        return res.json(req.user);
     });
 
     app.get('/login', (req, res) => {

@@ -134,7 +134,7 @@ async function run(conn) {
 
     app.use(express.static(path.join(__dirname, 'public')));
     app.get('/login/:authCode', (req, res) => {
-        const filePath = path.join(__dirname, 'public', 'wait', 'index.html');
+        const filePath = path.join(__dirname, 'public', 'login', 'auth', 'index.html');
         res.sendFile(filePath);
     });
 

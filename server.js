@@ -25,7 +25,7 @@ async function run(conn)
 
     console.log('Successfully connected to database!');
 
-    app.get('/auth/:authCode', authenticateToken(db), (req, res) => {
+    app.get('/auth/:authCode', await authenticateToken(db), (req, res) => {
         if(!req.user)
             return res.json({error: "Unspecified User"});
 

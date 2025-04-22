@@ -16,12 +16,12 @@ db.connect(
     }
 );
 
-function onAuthError(error) {
+function onAuthError(res, error) {
     console.error(error);
     return res.json({error: error});
 }
 
-function onAuthSuccess(user) {
+function onAuthSuccess(res, user) {
     console.log(JSON.stringify(user));
     return res.json(user);
 }

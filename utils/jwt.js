@@ -4,7 +4,7 @@ function generateToken(payload) {
     return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 }
 
-async function authenticateToken(db) {
+function authenticateToken(db) {
     return async function (req, res, next)
     {
         if(!db)
@@ -19,7 +19,7 @@ async function authenticateToken(db) {
             return res.json({error: "Bad User"});
         
         req.user = user;
-        next(req, res);
+        next();
         //return res.json({userName: user.userName, refreshToken: user.refreshToken});
         /*
         jwt.verify(token, process.env.JWT_SECRET, (err, user) => {

@@ -25,7 +25,7 @@ async function run(conn)
 
     console.log('Successfully connected to database!');
 
-    app.get('/auth/:authCode', await authenticateToken(db), (req, res) => {
+    app.get('/auth/:authCode', authenticateToken(db), (req, res) => {
         if(!req.user)
             return res.json({error: "Unspecified User"});
 
@@ -33,7 +33,7 @@ async function run(conn)
             return res.json({error: "Unknown User"});
 
         return res.json({
-            message: `Hello "${req.user.userName}", you have been authorized!`,
+            message: `Hello "${req.user.userName}", you have been authorized!`
         });
     });
 
@@ -112,7 +112,7 @@ async function run(conn)
             // Send token to client (e.g., via redirect or JSON response)
             // if(!res.headers) res.headers = [];
             // res.headers['user'] = user;
-            res.json({discordId: user.discordId, userName: user.userName, avatarUrl: user.avatarUrl, authCode: user.authCode});
+            res.json({discordId: user.discordId, userName: user.userName, avatarUrl: user.avatarUrl, refreshToken: user.refreshToken});
         } catch (error) {
             console.error(
                 'Authentication error:',

@@ -134,6 +134,11 @@ async function run(conn) {
 
     app.use(express.static(path.join(__dirname, 'public')));
     
+    app.get('/loading', (req, res) => {
+        const filePath = path.join(__dirname, 'public', 'loading', 'index.html');
+        res.sendFile(filePath);
+    });
+
     app.get('/login/success', (req, res) => {
         const filePath = path.join(__dirname, 'public', 'login', 'success', 'index.html');
         res.sendFile(filePath);
